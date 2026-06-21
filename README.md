@@ -79,11 +79,11 @@ Após a criação da stack, utilize o **Public DNS** ou a URL disponibilizada no
 
 ### Stack criada com sucesso
 
-![Stack CloudFormation](Implantacao-linha-do-tempo.png)
+![Stack CloudFormation](images/Implantacao-linha-do-tempo.png)
 
 ### Instância EC2 em execução com Apache
 
-![EC2 Apache](VPC.png)
+![EC2 Apache](images/VPC.png)
 
 ---
 
