@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Stack inicial - EC2 com Apache
+
+Parameters:
+  KeyName:
+    Description: Nome da chave SSH existente
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceType:
+    Description: Tipo da instância EC2
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+
+Resources:
+  DefaultVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.255.0.0/16
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DefaultVpc
+      CidrBlock: 10.255.1.0/24
+      MapPublicIpOnLaunch: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref DefaultVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DefaultVpc
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir acesso SSH e HTTP
+      VpcId: !Ref DefaultVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}"
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: Apache-WebServer
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          dnf update -y
+          dnf install -y httpd
+          systemctl enable httpd
+          systemctl start httpd
+          cat <<EOF > /var/www/html/index.html
+          <html>
+            <body>
+              <h1>Servidor Apache via CloudFormation</h1>
+              <p>Instância criada com sucesso.</p>
+            </body>
+          </html>
+          EOF
+
+Outputs:
+  InstanceId:
+    Description: ID da instância
+    Value: !Ref WebServerInstance
+
+  PublicIP:
+    Description: Endereço IP público
+    Value: !GetAtt WebServerInstance.PublicIp
+
+  PublicDNS:
+    Description: DNS público
+    Value: !GetAtt WebServerInstance.PublicDnsName
+
+  WebsiteURL:
+    Description: URL do servidor web
+    Value: !Sub "http://${WebServerInstance.PublicDnsName}"
