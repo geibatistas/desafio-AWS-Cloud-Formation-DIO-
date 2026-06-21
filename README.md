@@ -49,7 +49,7 @@ aws-cloudformation-desafio/
 ### 1. Clone este repositório
 
 ```bash
-git clone https://github.com/<seu-usuario>/aws-cloudformation-desafio.git
+git clone https://github.com/geibatistas/desafio-AWS-Cloud-Formation-DIO
 cd aws-cloudformation-desafio/templates
 ```
 
@@ -124,4 +124,4 @@ notes/insights.md
 
 Projeto desenvolvido como parte do Bootcamp AWS para prática de Infraestrutura como Código (IaC) utilizando AWS CloudFormation.
 
-**GitHub:** https://github.com/<seu-usuario>
+**GitHub:** https://github.com/geibatistas
